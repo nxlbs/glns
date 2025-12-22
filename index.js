@@ -25,7 +25,7 @@ const limiter = rateLimit({
 
 
 // Baca proxy list
-const proxyList = fs.readFileSync('proxies.txt', 'utf-8')
+const proxyList = fs.readFileSync('p.txt', 'utf-8')
   .split('\n')
   .filter(line => line.trim() !== '')
   .map(line => {
