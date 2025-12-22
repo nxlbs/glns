@@ -7,6 +7,9 @@ const NodeCache = require('node-cache');
 const Joi = require('joi');
 const cors = require('cors'); // Import the cors package
 
+const fs = require('node:fs');
+
+
 const app = express();
 const port = process.env.PORT || 3000;
 
@@ -19,6 +22,21 @@ const limiter = rateLimit({
     max: 10,
     message: "Too many requests from this IP, please try again later.",
 });
+
+
+// Baca proxy list
+const proxyList = fs.readFileSync('proxies.txt', 'utf-8')
+  .split('\n')
+  .filter(line => line.trim() !== '')
+  .map(line => {
+    const [ip, port, user, pw] = line.trim().split(':');
+    return { ip, port, user, pw };
+  });
+
+if (proxyList.length === 0) {
+  throw new Error('List proxy kosong.');
+}
+
 
 // Apply middleware
 app.use(cors()); // Enable CORS for all origins
@@ -37,45 +55,62 @@ const validateRequest = (req) => {
 // Utility function to delay execution
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+// let proxy
+
 // Initialize Puppeteer Cluster
 const initCluster = async () => {
     const cluster = await Cluster.launch({
         concurrency: Cluster.CONCURRENCY_CONTEXT,
         maxConcurrency: 5,
-        puppeteerOptions: {
-            headless: true,
-            executablePath: process.env.CHROME_BIN || null,
-            args: ['--no-sandbox', '--disable-setuid-sandbox']
-        }
+        // puppeteerOptions: {
+            // headless: true,
+            // executablePath: process.env.CHROME_BIN || null,
+            // args: ['--no-sandbox', '--disable-setuid-sandbox']
+        // }
+        puppeteerOptions: ({ workerId }) => { // Proxy berbeda per worker
+            const proxyIndex = (workerId - 1) % proxyList.length; // Rotasi berurutan
+            const proxy = proxyList[proxyIndex];
+            return {
+                headless: true,
+                executablePath: process.env.CHROME_BIN || null,
+                args: [
+                    `--proxy-server=http://${proxy.ip}:${proxy.port}`,
+                    '--no-sandbox',
+                    '--disable-setuid-sandbox'
+                ],
+                workerData: { proxy }
+            };
+        },
     });
 
-    await cluster.task(async ({ page, data }) => {
+    await cluster.task(async ({ page, data, worker }) => {
 
+        const proxy = worker.options.workerData.proxy;
 
+        // Autentikasi dengan user & pw yang sesuai proxy ini
+        await page.authenticate({
+            username: proxy.user,
+            password: proxy.pw
+        });
 
-  const { imageUrl, proxy } = data; // proxy sekarang datang dari data
+        const { img } = data; // proxy sekarang datang dari data
 
-    // Validasi proxy (opsional tapi disarankan)
-    if (!proxy || !proxy.ip || !proxy.port) {
-      throw new Error('Proxy tidak valid untuk task ini.');
-    }
+    // // Validasi proxy (opsional tapi disarankan)
+    // if (!proxy || !proxy.ip || !proxy.port) {
+      // throw new Error('Proxy tidak valid untuk task ini.');
+    // }
     
     
-   // Set proxy via CDP Session
-    const client = await page.target().createCDPSession();
-    await client.send('Network.enable');
-    await client.send('Network.setProxySettings', {
-      mode: 'fixed_servers',
-      proxyRules: `http://${proxy.ip}:${proxy.port}`
-    });
+   // // Set proxy via CDP Session
+    // const client = await page.target().createCDPSession();
+    // await client.send('Network.enable');
+    // await client.send('Network.setProxySettings', {
+      // mode: 'fixed_servers',
+      // proxyRules: `http://${proxy.ip}:${proxy.port}`
+    // });
 
-    // Autentikasi proxy
-    await page.authenticate({
-      username: proxy.usr,
-      password: proxy.pw
-    });
-    
-        const lensUrl = Buffer.from("aHR0cHM"+"6Ly9jb3JzL"+"mNhbGlwaC5"+"teS5pZC8=", "base64").toString() + Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(imageUrl);
+
+        const lensUrl = Buffer.from("aHR0cHM"+"6Ly9jb3JzL"+"mNhbGlwaC5"+"teS5pZC8=", "base64").toString() + Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(img);
 
         await page.goto(lensUrl, { waitUntil: 'networkidle2' });
         await delay(5000);
