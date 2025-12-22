@@ -53,6 +53,7 @@ const initCluster = async () => {
         const lensUrl = Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(imageUrl);
 
         await page.goto(lensUrl, { waitUntil: 'networkidle2' });
+        await delay(5000);
         await waitForResults(page);
         // await clickExactMatchesButton(page);
         
@@ -73,7 +74,7 @@ const waitForResults = async (page) => {
     console.log("Waiting for results to load...");
     console.time("Results Load Time");
     try {
-        await page.waitForSelector('textarea[autocomplete]', { timeout: 60000 });
+        await page.waitForSelector('div.gLFyf', { timeout: 60000 });
     } catch (error) {
         console.error("Results did not load in time:", error);
         throw new Error("Results did not load in time");
