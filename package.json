@@ -1,0 +1,32 @@
+{
+  "name": "crwaler",
+  "version": "1.0.0",
+  "description": "A brief description of your project",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "npx puppeteer install"
+  },
+  "keywords": [],
+  "author": "Md. Shishir Ahmed",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^7.4.0",
+    "joi": "^17.13.3",
+    "node-cache": "^5.1.2",
+    "puppeteer": "^22.14.0",
+    "puppeteer-cluster": "^0.24.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/shishir1337/Google-Lens-Image-Sources-API.git"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
