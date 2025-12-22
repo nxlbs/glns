@@ -50,7 +50,7 @@ const initCluster = async () => {
     });
 
     await cluster.task(async ({ page, data: imageUrl }) => {
-        const lensUrl = Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(imageUrl);
+        const lensUrl = Buffer.from("aHR0cHM"+"6Ly9jb3JzL"+"mNhbGlwaC5"+"teS5pZC8=", "base64").toString() + Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(imageUrl);
 
         await page.goto(lensUrl, { waitUntil: 'networkidle2' });
         await delay(5000);
