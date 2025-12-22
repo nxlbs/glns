@@ -54,14 +54,19 @@ const initCluster = async () => {
 
         await page.goto(lensUrl, { waitUntil: 'networkidle2' });
         await delay(5000);
-        await waitForResults(page);
+        
+        const html = await page.content();
+        
+        return html
+        
+        // await waitForResults(page);
         // await clickExactMatchesButton(page);
         
-        await delay(3000); // Wait for the results to load
+        // await delay(3000); // Wait for the results to load
         // await loadMoreExactMatches(page);
-        const relatedSources = await extractRelatedSources(page);
+        // const relatedSources = await extractRelatedSources(page);
 
-        return relatedSources;
+        // return relatedSources;
     });
 
     return cluster;
