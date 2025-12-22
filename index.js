@@ -233,10 +233,10 @@ app.use((err, req, res, next) => {
 
 // Express API endpoint
 app.post('/api/upload', async (req, res) => {
-    const { error } = validateRequest(req);
-    if (error) {
-        return res.status(400).json({ error: error.details[0].message });
-    }
+    // const { error } = validateRequest(req);
+    // if (error) {
+        // return res.status(400).json({ error: error.details[0].message });
+    // }
 
     const { data, no_cache } = req.body; // Extract no_cache from request body
     
