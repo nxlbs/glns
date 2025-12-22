@@ -49,7 +49,32 @@ const initCluster = async () => {
         }
     });
 
-    await cluster.task(async ({ page, data: imageUrl }) => {
+    await cluster.task(async ({ page, data }) => {
+
+
+
+  const { imageUrl, proxy } = data; // proxy sekarang datang dari data
+
+    // Validasi proxy (opsional tapi disarankan)
+    if (!proxy || !proxy.ip || !proxy.port) {
+      throw new Error('Proxy tidak valid untuk task ini.');
+    }
+    
+    
+   // Set proxy via CDP Session
+    const client = await page.target().createCDPSession();
+    await client.send('Network.enable');
+    await client.send('Network.setProxySettings', {
+      mode: 'fixed_servers',
+      proxyRules: `http://${proxy.ip}:${proxy.port}`
+    });
+
+    // Autentikasi proxy
+    await page.authenticate({
+      username: proxy.usr,
+      password: proxy.pw
+    });
+    
         const lensUrl = Buffer.from("aHR0cHM"+"6Ly9jb3JzL"+"mNhbGlwaC5"+"teS5pZC8=", "base64").toString() + Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(imageUrl);
 
         await page.goto(lensUrl, { waitUntil: 'networkidle2' });
@@ -170,28 +195,28 @@ const extractRelatedSources = async (page) => {
 
 // Upload image and get sources from Google Lens
 const uploadImageAndGetSources = async (imageUrl, noCache = false) => {
-    if (noCache) {
-        console.log("Bypassing cache...");
-        // Always fetch new results when noCache is true
-        try {
-            const relatedSources = await cluster.execute(imageUrl);
-            const result = { "image_sources": relatedSources };
-            return result;
-        } catch (error) {
-            console.error('Error during image processing:', error);
-            throw new Error('Error during image processing');
-        }
-    }
+    // if (noCache) {
+        // console.log("Bypassing cache...");
+        // // Always fetch new results when noCache is true
+        // try {
+            // const relatedSources = await cluster.execute(imageUrl);
+            // const result = { "image_sources": relatedSources };
+            // return result;
+        // } catch (error) {
+            // console.error('Error during image processing:', error);
+            // throw new Error('Error during image processing');
+        // }
+    // }
 
-    const cachedResult = cache.get(imageUrl);
-    if (cachedResult) {
-        console.log("Returning cached result...");
-        return cachedResult;
-    }
+    // const cachedResult = cache.get(imageUrl);
+    // if (cachedResult) {
+        // console.log("Returning cached result...");
+        // return cachedResult;
+    // }
 
     try {
         const relatedSources = await cluster.execute(imageUrl);
-        const result = { "image_sources": relatedSources };
+        const result = { result: relatedSources };
         cache.set(imageUrl, result);
         return result;
     } catch (error) {
@@ -213,10 +238,10 @@ app.post('/api/upload', async (req, res) => {
         return res.status(400).json({ error: error.details[0].message });
     }
 
-    const { imageUrl, no_cache } = req.body; // Extract no_cache from request body
+    const { data, no_cache } = req.body; // Extract no_cache from request body
     
     try {
-        const sources = await uploadImageAndGetSources(imageUrl, no_cache);
+        const sources = await uploadImageAndGetSources(data, no_cache);
         res.json(sources);
     } catch (error) {
         res.status(500).json({ error: 'An error occurred while processing the image' });
