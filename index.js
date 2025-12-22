@@ -62,36 +62,36 @@ const initCluster = async () => {
     const cluster = await Cluster.launch({
         concurrency: Cluster.CONCURRENCY_CONTEXT,
         maxConcurrency: 5,
-        // puppeteerOptions: {
-            // headless: true,
-            // executablePath: process.env.CHROME_BIN || null,
-            // args: ['--no-sandbox', '--disable-setuid-sandbox']
-        // }
-        puppeteerOptions: ({ workerId }) => { // Proxy berbeda per worker
-            const proxyIndex = (workerId - 1) % proxyList.length; // Rotasi berurutan
-            const proxy = proxyList[proxyIndex];
-            return {
-                headless: true,
-                executablePath: process.env.CHROME_BIN || null,
-                args: [
-                    `--proxy-server=http://${proxy.ip}:${proxy.port}`,
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox'
-                ],
-                workerData: { proxy }
-            };
-        },
+        puppeteerOptions: {
+            headless: true,
+            executablePath: process.env.CHROME_BIN || null,
+            args: ['--no-sandbox', '--disable-setuid-sandbox']
+        }
+        // puppeteerOptions: ({ workerId }) => { // Proxy berbeda per worker
+            // const proxyIndex = (workerId - 1) % proxyList.length; // Rotasi berurutan
+            // const proxy = proxyList[proxyIndex];
+            // return {
+                // headless: true,
+                // executablePath: process.env.CHROME_BIN || null,
+                // args: [
+                    // `--proxy-server=http://${proxy.ip}:${proxy.port}`,
+                    // '--no-sandbox',
+                    // '--disable-setuid-sandbox'
+                // ],
+                // workerData: { proxy }
+            // };
+        // },
     });
 
     await cluster.task(async ({ page, data, worker }) => {
 
-        const proxy = worker.options.workerData.proxy;
+        // const proxy = worker.options.workerData.proxy;
 
         // Autentikasi dengan user & pw yang sesuai proxy ini
-        await page.authenticate({
-            username: proxy.user,
-            password: proxy.pw
-        });
+        // await page.authenticate({
+            // username: proxy.user,
+            // password: proxy.pw
+        // });
 
         const { img } = data; // proxy sekarang datang dari data
 
