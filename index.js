@@ -23,7 +23,7 @@ const limiter = rateLimit({
 // Apply middleware
 app.use(cors()); // Enable CORS for all origins
 app.use(bodyParser.json());
-app.use(limiter); // Apply rate limiting
+// app.use(limiter); // Apply rate limiting
 
 // Validate request body
 const validateRequest = (req) => {
@@ -54,9 +54,10 @@ const initCluster = async () => {
 
         await page.goto(lensUrl, { waitUntil: 'networkidle2' });
         await waitForResults(page);
-        await clickExactMatchesButton(page);
+        // await clickExactMatchesButton(page);
+        
         await delay(3000); // Wait for the results to load
-        await loadMoreExactMatches(page);
+        // await loadMoreExactMatches(page);
         const relatedSources = await extractRelatedSources(page);
 
         return relatedSources;
@@ -72,7 +73,7 @@ const waitForResults = async (page) => {
     console.log("Waiting for results to load...");
     console.time("Results Load Time");
     try {
-        await page.waitForSelector('div.LHkehc[role="button"] div.WF9wo', { timeout: 60000 });
+        await page.waitForSelector('textarea[autocomplete]', { timeout: 60000 });
     } catch (error) {
         console.error("Results did not load in time:", error);
         throw new Error("Results did not load in time");
