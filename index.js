@@ -1,5 +1,11 @@
+
+
 const puppeteer = require('puppeteer');
 const { Cluster } = require('puppeteer-cluster');
+
+const ppProxy = require('puppeteer-page-proxy');
+
+
 const express = require('express');
 const bodyParser = require('body-parser');
 const rateLimit = require('express-rate-limit');
@@ -67,48 +73,17 @@ const initCluster = async () => {
             executablePath: process.env.CHROME_BIN || null,
             args: ['--no-sandbox', '--disable-setuid-sandbox']
         }
-        // puppeteerOptions: ({ workerId }) => { // Proxy berbeda per worker
-            // const proxyIndex = (workerId - 1) % proxyList.length; // Rotasi berurutan
-            // const proxy = proxyList[proxyIndex];
-            // return {
-                // headless: true,
-                // executablePath: process.env.CHROME_BIN || null,
-                // args: [
-                    // `--proxy-server=http://${proxy.ip}:${proxy.port}`,
-                    // '--no-sandbox',
-                    // '--disable-setuid-sandbox'
-                // ],
-                // workerData: { proxy }
-            // };
-        // },
     });
 
     await cluster.task(async ({ page, data, worker }) => {
 
-        // const proxy = worker.options.workerData.proxy;
-
-        // Autentikasi dengan user & pw yang sesuai proxy ini
-        // await page.authenticate({
-            // username: proxy.user,
-            // password: proxy.pw
-        // });
-
-        const { img } = data; // proxy sekarang datang dari data
-
-    // // Validasi proxy (opsional tapi disarankan)
-    // if (!proxy || !proxy.ip || !proxy.port) {
-      // throw new Error('Proxy tidak valid untuk task ini.');
-    // }
-    
-    
-   // // Set proxy via CDP Session
-    // const client = await page.target().createCDPSession();
-    // await client.send('Network.enable');
-    // await client.send('Network.setProxySettings', {
-      // mode: 'fixed_servers',
-      // proxyRules: `http://${proxy.ip}:${proxy.port}`
-    // });
-
+        const { img, proxy } = data;
+        
+        if (proxy) {
+            // const proxyUrl = `http://${proxy.user}:${proxy.pw}@${proxy.ip}:${proxy.port}`;
+            await ppProxy(page, proxy);
+        }
+        
 
         const lensUrl = Buffer.from("aHR0cHM"+"6Ly9jb3JzL"+"mNhbGlwaC5"+"teS5pZC8=", "base64").toString() + Buffer.from("aHR0cHM6Ly9sZW5"+"zLmdvb2dsZS5jb2"+"0vdXBsb2FkYnl1c"+"mw/dXJsPQ==", "base64").toString() + encodeURIComponent(img);
 
@@ -252,7 +227,7 @@ const uploadImageAndGetSources = async (imageUrl, noCache = false) => {
     try {
         const relatedSources = await cluster.execute(imageUrl);
         const result = { result: relatedSources };
-        cache.set(imageUrl, result);
+        // cache.set(imageUrl, result);
         return result;
     } catch (error) {
         console.error('Error during image processing:', error);
