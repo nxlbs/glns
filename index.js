@@ -4,6 +4,7 @@ const puppeteer = require('puppeteer');
 const { Cluster } = require('puppeteer-cluster');
 
 const ppProxy = require('puppeteer-page-proxy');
+const ProxyChain = require('proxy-chain');
 
 
 const express = require('express');
@@ -79,9 +80,21 @@ const initCluster = async () => {
 
         const { img, proxy } = data;
         
+        let proxyUrl = null;
+        
         if (proxy) {
-            // const proxyUrl = `http://${proxy.user}:${proxy.pw}@${proxy.ip}:${proxy.port}`;
-            await ppProxy(page, proxy);
+            // Buat proxy URL dengan autentikasi
+            // const oldProxyUrl = `http://${proxy.user}:${proxy.pw}@${proxy.ip}:${proxy.port}`;
+            
+            // Anonymize proxy (convert ke local proxy tanpa auth)
+            proxyUrl = await ProxyChain.anonymizeProxy(proxy);
+            
+            // Set proxy via CDP
+            const client = await page.target().createCDPSession();
+            await client.send('Network.enable');
+            await client.send('Network.setRequestInterception', { 
+                patterns: [{ urlPattern: '*' }] 
+            });
         }
         
 
@@ -91,6 +104,12 @@ const initCluster = async () => {
         await delay(5000);
         
         const html = await page.content();
+        
+        // Close proxy setelah selesai
+        if (proxyUrl) {
+            await ProxyChain.closeAnonymizedProxy(proxyUrl, true);
+        }
+        
         
         return html
         
